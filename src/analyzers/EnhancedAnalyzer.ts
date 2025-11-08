@@ -2,22 +2,31 @@ import { AppAnalyzer } from './AppAnalyzer';
 import { ColorExtractor } from './ColorExtractor';
 import { ReadmeAnalyzer } from './ReadmeAnalyzer';
 import { ScreenshotCapture } from './ScreenshotCapture';
+import { SmartCategoryDetector } from './SmartCategoryDetector';
+import { DynamicKeywordGenerator } from './DynamicKeywordGenerator';
 import { AppData, GeneratorConfig } from '../types';
 import * as fs from 'fs';
 import * as path from 'path';
 
 /**
- * Analizador Mejorado que usa:
- * - Análisis inteligente del README con IA
- * - Extracción de paleta de colores de assets existentes
- * - Captura de screenshots del simulador
- * - Todo lo que ya hacía AppAnalyzer
+ * Analizador Mejorado COMPLETAMENTE DINÁMICO
+ *
+ * NO usa listas hardcodeadas de categorías ni keywords
+ * TODO es detectado con IA basándose en el análisis profundo de:
+ * - README con IA
+ * - Código y dependencias
+ * - Assets existentes (colores, iconos)
+ * - Screenshots del simulador
+ *
+ * Funciona para CUALQUIER tipo de app: música, fitness, juegos, etc.
  */
 export class EnhancedAnalyzer {
   private baseAnalyzer: AppAnalyzer;
   private colorExtractor: ColorExtractor;
   private readmeAnalyzer: ReadmeAnalyzer;
   private screenshotCapture: ScreenshotCapture;
+  private categoryDetector: SmartCategoryDetector;
+  private keywordGenerator: DynamicKeywordGenerator;
   private config: GeneratorConfig;
 
   constructor(projectPath: string, config: GeneratorConfig) {
@@ -27,6 +36,8 @@ export class EnhancedAnalyzer {
     this.screenshotCapture = new ScreenshotCapture(
       path.join(config.outputDir, 'screenshots')
     );
+    this.categoryDetector = new SmartCategoryDetector(config);
+    this.keywordGenerator = new DynamicKeywordGenerator(config);
     this.config = config;
   }
 
@@ -125,8 +136,53 @@ export class EnhancedAnalyzer {
       console.log('  ⏭️ No hay iconos/logos existentes para extraer colores');
     }
 
-    // 4. Captura de screenshots del simulador (si está configurado)
-    console.log('\n📸 Paso 4: Buscando simuladores...');
+    // 4. Detección inteligente de categoría (completamente dinámico)
+    console.log('\n🧠 Paso 4: Detectando categoría con IA...');
+    let categoryDetection;
+    try {
+      categoryDetection = await this.categoryDetector.detectCategory(
+        baseData,
+        baseData.readme
+      );
+
+      // Actualizar categoría basándose en detección inteligente
+      baseData.category = categoryDetection.category;
+
+      console.log('  ✓ Categoría detectada con IA');
+      console.log(`  → Categoría: ${categoryDetection.category}`);
+      if (categoryDetection.subcategory) {
+        console.log(`  → Subcategoría: ${categoryDetection.subcategory}`);
+      }
+      console.log(`  → Tipo de app: ${categoryDetection.appType}`);
+      console.log(`  → Confianza: ${categoryDetection.confidence}%`);
+      console.log(`  → Razonamiento: ${categoryDetection.reasoning}`);
+    } catch (error) {
+      console.log('  ⚠️  Error detectando categoría con IA, usando básico');
+    }
+
+    // 5. Generación dinámica de keywords (basándose en análisis real)
+    console.log('\n🔑 Paso 5: Generando keywords dinámicos...');
+    let dynamicKeywords;
+    try {
+      dynamicKeywords = await this.keywordGenerator.generateKeywords(
+        baseData,
+        baseData.category || 'App',
+        baseData.readme
+      );
+
+      // Actualizar keywords con generación dinámica
+      baseData.keywords = dynamicKeywords.all;
+
+      console.log('  ✓ Keywords generados dinámicamente');
+      console.log(`  → Primarios: ${dynamicKeywords.primary.join(', ')}`);
+      console.log(`  → Secundarios: ${dynamicKeywords.secondary.slice(0, 5).join(', ')}...`);
+      console.log(`  → Total: ${dynamicKeywords.all.length} keywords`);
+    } catch (error) {
+      console.log('  ⚠️  Error generando keywords con IA, usando básicos');
+    }
+
+    // 6. Captura de screenshots del simulador (si está configurado)
+    console.log('\n📸 Paso 6: Buscando simuladores...');
     let capturedScreenshots;
     const simulators = await this.screenshotCapture.detectSimulators();
 
@@ -174,6 +230,8 @@ export class EnhancedAnalyzer {
       colorPalette,
       readmeAnalysis,
       capturedScreenshots,
+      categoryDetection,
+      dynamicKeywords,
     };
   }
 
