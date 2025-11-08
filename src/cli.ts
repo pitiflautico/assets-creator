@@ -31,7 +31,7 @@ program
       const spinner = ora('Inicializando Assets Creator...').start();
 
       const creator = new AssetsCreator({
-        outputDir: options.output || path.join(process.cwd(), 'generated_assets'),
+        outputDir: options.output || path.join(process.cwd(), 'projects'),
         preferences: {
           language: 'es',
           tone: 'professional',
@@ -112,7 +112,7 @@ program
       console.log(chalk.blue.bold('\n📝 Generando textos y metadatos...\n'));
 
       const creator = new AssetsCreator({
-        outputDir: options.output || path.join(process.cwd(), 'generated_assets'),
+        outputDir: options.output || path.join(process.cwd(), 'projects'),
         preferences: {
           language: 'es',
           tone: 'professional',
@@ -146,7 +146,7 @@ program
       console.log(chalk.blue.bold('\n🎨 Generando imágenes...\n'));
 
       const creator = new AssetsCreator({
-        outputDir: options.output || path.join(process.cwd(), 'generated_assets'),
+        outputDir: options.output || path.join(process.cwd(), 'projects'),
         preferences: {
           language: 'es',
           tone: 'professional',
@@ -249,7 +249,7 @@ program
           type: 'input',
           name: 'output',
           message: 'Directorio de salida:',
-          default: './generated_assets',
+          default: './projects',
         },
       ]);
 

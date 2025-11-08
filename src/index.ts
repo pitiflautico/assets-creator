@@ -78,11 +78,11 @@ export class AssetsCreator {
 
       // Crear carpeta con nombre de la app
       const appFolderName = this.sanitizeAppName(analysisResult.name);
-      const outputDir = path.join(process.cwd(), 'generated_assets', appFolderName);
+      const outputDir = path.join(process.cwd(), 'projects', appFolderName);
       this.config.outputDir = outputDir;
       ensureDir(outputDir);
 
-      console.log(`\n📁 Carpeta de salida: ${appFolderName}/\n`);
+      console.log(`\n📁 Carpeta de salida: projects/${appFolderName}/\n`);
 
       // Extraer datos del análisis mejorado
       const appData: AppData = {
@@ -340,7 +340,7 @@ export class AssetsCreator {
     // Extraer solo el nombre de la carpeta
     const appFolder = path.basename(outputDir);
 
-    console.log(`\n📁 Todos los archivos guardados en: generated_assets/${appFolder}/`);
+    console.log(`\n📁 Todos los archivos guardados en: projects/${appFolder}/`);
     console.log(`\n🎯 IMPORTANTE: Lee primero el archivo:`);
     console.log(`   📋 00-BRIEF-DE-DISEÑO.md`);
     console.log(`\nEste documento contiene TODA la información necesaria para crear los assets.`);
@@ -441,7 +441,8 @@ Los assets generados están listos para ser usados en:
 ## 📁 Estructura de Archivos
 
 \`\`\`
-generated_assets/
+projects/${appData.name}/
+├── 00-BRIEF-DE-DISEÑO.md      # 📋 LEER PRIMERO - Brief completo con toda la info
 ├── metadata.json              # Metadatos completos
 ├── aso-optimization.json      # Análisis ASO
 ├── analysis-complete.json     # Análisis inteligente completo

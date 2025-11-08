@@ -84,7 +84,7 @@ REPLICATE_API_TOKEN=r8_tu_token_aqui
 OPENAI_API_KEY=sk_tu_key_aqui
 DEFAULT_IMAGE_MODEL=stability-ai/sdxl
 DEFAULT_LLM_MODEL=meta/meta-llama-3-70b-instruct
-OUTPUT_DIR=./generated_assets
+OUTPUT_DIR=./projects
 ```
 
 ### 3. Verificar Configuración
@@ -196,7 +196,7 @@ import { AssetsCreator } from '@assets-creator/core';
 
 const creator = new AssetsCreator({
   replicateApiKey: 'tu_api_key',
-  outputDir: './generated_assets',
+  outputDir: './projects',
   preferences: {
     language: 'es',
     tone: 'professional',
@@ -220,7 +220,7 @@ const appData = await creator.analyzeOnly('./mi-proyecto');
 ### Estructura de Salida
 
 ```
-generated_assets/
+projects/
 ├── README.md                      # Resumen de assets generados
 ├── manifest.yaml                  # Manifest completo
 ├── metadata.json                  # Metadatos estructurados
@@ -387,7 +387,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: generated-assets
-          path: generated_assets/
+          path: projects/
 ```
 
 ## 🎨 Personalización de Prompts

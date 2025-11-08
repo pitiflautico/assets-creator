@@ -3,7 +3,7 @@ dist/
 .env
 *.log
 .DS_Store
-generated_assets/
+projects/
 output/
 temp/
 *.tmp

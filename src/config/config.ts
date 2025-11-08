@@ -12,7 +12,7 @@ export function getDefaultConfig(overrides?: Partial<GeneratorConfig>): Generato
   const config: GeneratorConfig = {
     replicateApiKey: process.env.REPLICATE_API_TOKEN || '',
     openaiApiKey: process.env.OPENAI_API_KEY,
-    outputDir: process.env.OUTPUT_DIR || path.join(process.cwd(), 'generated_assets'),
+    outputDir: process.env.OUTPUT_DIR || path.join(process.cwd(), 'projects'),
     models: {
       llm:
         process.env.DEFAULT_LLM_MODEL ||

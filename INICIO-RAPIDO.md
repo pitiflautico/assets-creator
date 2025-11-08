@@ -107,17 +107,21 @@ npm run generate -- -p /Users/danielperezpinazo/Projects/tabata
 
 ## Resultados
 
-Los assets se guardan en:
+Los assets se guardan organizados en:
 ```
-generated_assets/
+projects/
   └── nombre-de-tu-app/
-      ├── 00-BRIEF-DE-DISEÑO.md  ← Lee esto primero!
+      ├── 00-BRIEF-DE-DISEÑO.md  ← 📋 Lee esto primero!
       ├── metadata.json
       ├── metadata.yaml
       ├── manifest.json
       ├── README.md
-      └── screenshots/
+      ├── screenshots/
+      ├── texts/
+      └── images/
 ```
+
+Cada app tiene su propia carpeta dentro de `projects/` con todos sus assets organizados.
 
 ## Solución de problemas
 
