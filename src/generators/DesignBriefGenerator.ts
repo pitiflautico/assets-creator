@@ -420,7 +420,7 @@ ${this.listExistingAssets(appData.existingAssets)}
   private async generateFinalRecommendations(
     appData: AppData,
     analysisResult: any
-  ): string {
+  ): Promise<string> {
     const recommendations = [];
 
     // Recomendación de colores

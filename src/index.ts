@@ -200,6 +200,38 @@ export class AssetsCreator {
   }
 
   /**
+   * Solo genera imágenes (análisis + generación de imágenes)
+   */
+  async generateImagesOnly(projectPath?: string): Promise<any[]> {
+    if (projectPath) {
+      this.projectPath = projectPath;
+      this.enhancedAnalyzer = new EnhancedAnalyzer(projectPath, this.config);
+    }
+
+    const analysisResult = await this.enhancedAnalyzer.analyze();
+
+    const appData: AppData = {
+      name: analysisResult.name,
+      description: analysisResult.description,
+      version: analysisResult.version,
+      category: analysisResult.category,
+      keywords: analysisResult.keywords,
+      features: analysisResult.features,
+      targetAudience: analysisResult.targetAudience,
+      platform: analysisResult.platform,
+      packageJson: analysisResult.packageJson,
+      readme: analysisResult.readme,
+      sourceCode: analysisResult.sourceCode,
+      existingAssets: analysisResult.existingAssets,
+    };
+
+    // Generate all assets (icons, screenshots, banners, etc.)
+    const images = await this.imageGenerator.generateAllAssets(appData);
+
+    return images;
+  }
+
+  /**
    * Solo captura screenshots del simulador
    */
   async captureScreenshots(projectPath?: string): Promise<string[]> {

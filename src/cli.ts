@@ -86,7 +86,7 @@ program
 
       if (appData.features?.length) {
         console.log(chalk.white('\nFeatures encontrados:'));
-        appData.features.forEach((f, i) => {
+        appData.features.forEach((f: string, i: number) => {
           console.log(chalk.gray(`  ${i + 1}.`), chalk.cyan(f));
         });
       }

@@ -184,7 +184,7 @@ export class ScreenshotCapture {
 
     return new Promise(resolve => {
       const capture = () => {
-        rl.question('Presiona ENTER para capturar (q para salir): ', async answer => {
+        rl.question('Presiona ENTER para capturar (q para salir): ', async (answer: string) => {
           if (answer.toLowerCase() === 'q') {
             rl.close();
             console.log(`\n✅ ${screenshots.length} screenshots capturados\n`);

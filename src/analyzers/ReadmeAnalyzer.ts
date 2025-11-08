@@ -2,6 +2,20 @@ import Replicate from 'replicate';
 import { GeneratorConfig } from '../types';
 
 /**
+ * Resultado del análisis de README
+ */
+export type ReadmeAnalysisResult = {
+  description: string;
+  mainPurpose: string;
+  targetAudience: string;
+  keyFeatures: string[];
+  uniqueSellingPoints: string[];
+  category: string;
+  keywords: string[];
+  tone: string;
+};
+
+/**
  * Analizador inteligente de README
  * Usa IA para extraer información real del README
  */
@@ -19,16 +33,7 @@ export class ReadmeAnalyzer {
   /**
    * Analiza README con IA y extrae información estructurada
    */
-  async analyzeReadme(readmeContent: string): Promise<{
-    description: string;
-    mainPurpose: string;
-    targetAudience: string;
-    keyFeatures: string[];
-    uniqueSellingPoints: string[];
-    category: string;
-    keywords: string[];
-    tone: string;
-  }> {
+  async analyzeReadme(readmeContent: string): Promise<ReadmeAnalysisResult> {
     if (!readmeContent || readmeContent.length < 50) {
       return this.getDefaultAnalysis();
     }
@@ -85,16 +90,7 @@ TONE: [tone]`;
   /**
    * Parsea respuesta del LLM
    */
-  private parseAnalysisResponse(response: string): {
-    description: string;
-    mainPurpose: string;
-    targetAudience: string;
-    keyFeatures: string[];
-    uniqueSellingPoints: string[];
-    category: string;
-    keywords: string[];
-    tone: string;
-  } {
+  private parseAnalysisResponse(response: string): ReadmeAnalysisResult {
     const result = this.getDefaultAnalysis();
 
     // Extraer descripción
@@ -162,7 +158,7 @@ TONE: [tone]`;
   /**
    * Extrae información básica sin IA (fallback)
    */
-  private extractBasicInfo(readme: string): ReturnType<ReadmeAnalyzer['analyzeReadme']> {
+  private extractBasicInfo(readme: string): ReadmeAnalysisResult {
     const result = this.getDefaultAnalysis();
 
     // Extraer primera descripción significativa
@@ -193,16 +189,7 @@ TONE: [tone]`;
   /**
    * Análisis por defecto
    */
-  private getDefaultAnalysis(): {
-    description: string;
-    mainPurpose: string;
-    targetAudience: string;
-    keyFeatures: string[];
-    uniqueSellingPoints: string[];
-    category: string;
-    keywords: string[];
-    tone: string;
-  } {
+  private getDefaultAnalysis(): ReadmeAnalysisResult {
     return {
       description: '',
       mainPurpose: '',

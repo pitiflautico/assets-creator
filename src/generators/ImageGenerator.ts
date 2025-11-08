@@ -80,7 +80,7 @@ export class ImageGenerator {
       type: 'icon',
       style: 'modern, minimalist, professional',
       dimensions: { width: 1024, height: 1024 },
-      platform: appData.platform,
+      platform: this.mapPlatform(appData.platform),
     };
 
     const image = await this.generateImage(request);
@@ -145,7 +145,7 @@ export class ImageGenerator {
         type: 'screenshot',
         style: 'clean, modern UI, professional',
         dimensions: this.getScreenshotDimensions(appData.platform),
-        platform: appData.platform,
+        platform: this.mapPlatform(appData.platform),
       };
 
       try {
@@ -373,8 +373,20 @@ vibrant but professional color scheme, high quality`;
   }
 
   /**
-   * Obtiene dimensiones de screenshot según plataforma
+   * Maps platform to supported image generation platforms
    */
+  private mapPlatform(platform?: string): 'ios' | 'android' | 'web' | undefined {
+    if (!platform) return undefined;
+    if (platform === 'ios' || platform === 'android' || platform === 'web') {
+      return platform;
+    }
+    // Map desktop and multiplatform to web
+    if (platform === 'desktop' || platform === 'multiplatform') {
+      return 'web';
+    }
+    return 'web'; // default
+  }
+
   private getScreenshotDimensions(platform?: string): { width: number; height: number } {
     const dimensions = {
       ios: { width: 1242, height: 2688 }, // iPhone 11 Pro Max

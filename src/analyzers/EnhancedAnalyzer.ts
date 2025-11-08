@@ -58,6 +58,8 @@ export class EnhancedAnalyzer {
       tone: string;
     };
     capturedScreenshots?: string[];
+    categoryDetection?: any;
+    dynamicKeywords?: any;
   }> {
     console.log('🔍 Análisis Mejorado del Proyecto');
     console.log('═══════════════════════════════════════\n');

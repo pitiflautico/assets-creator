@@ -12,7 +12,9 @@
     "dev": "tsx src/cli.ts",
     "start": "node dist/cli.js",
     "test": "jest",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "analyze": "tsx src/cli.ts analyze",
+    "generate": "tsx src/cli.ts generate"
   },
   "keywords": [
     "replicate",
