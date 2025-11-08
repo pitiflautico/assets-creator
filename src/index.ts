@@ -10,6 +10,9 @@ import chalk from 'chalk';
 import ora from 'ora';
 import path from 'path';
 import { Scanner } from './scanner';
+import { IntelligentAnalyzer } from './analyzer';
+import { ColorExtractor } from './color-extractor';
+import { AutoNavigator } from './auto-navigator';
 import { BrandingGenerator } from './branding';
 import { MetadataGenerator } from './metadata';
 import { SimulatorManager } from './simulator';
@@ -17,11 +20,20 @@ import { ImageOptimizer } from './optimizer';
 import { Exporter } from './exporter';
 import { ConfigManager } from './config';
 import { Logger } from './utils';
-import { ProjectInfo, BrandingAssets, MetadataInfo, ScreenshotInfo } from './types';
+import {
+  ProjectInfo,
+  ProjectContext,
+  ColorPalette,
+  BrandingAssets,
+  MetadataInfo,
+  ScreenshotInfo,
+} from './types';
 
 class AIPublisher {
   private config = ConfigManager.getInstance();
   private projectInfo?: ProjectInfo;
+  private projectContext?: ProjectContext;
+  private colorPalette?: ColorPalette;
   private brandingAssets?: BrandingAssets;
   private metadata?: MetadataInfo;
   private screenshots: ScreenshotInfo[] = [];
@@ -32,8 +44,10 @@ class AIPublisher {
     // Load configuration
     await this.config.load();
 
-    // Main workflow
+    // Main workflow with intelligent analysis
     await this.selectProject();
+    await this.analyzeProjectIntelligently();
+    await this.extractColorPalette();
     await this.analyzeBranding();
     await this.generateMetadata();
     await this.handleScreenshots();
@@ -91,6 +105,104 @@ class AIPublisher {
     }
   }
 
+  private async analyzeProjectIntelligently(): Promise<void> {
+    if (!this.projectInfo) return;
+
+    const { useIntelligentAnalysis } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'useIntelligentAnalysis',
+        message: '🤖 Use AI to deeply analyze your app and understand its purpose?',
+        default: true,
+      },
+    ]);
+
+    if (!useIntelligentAnalysis) {
+      Logger.info('Skipping intelligent analysis');
+      return;
+    }
+
+    const spinner = ora('🧠 Analyzing project with AI...').start();
+
+    try {
+      const analyzer = new IntelligentAnalyzer(this.projectInfo.path);
+      this.projectContext = await analyzer.analyzeProject(this.projectInfo);
+
+      spinner.succeed('Project analyzed');
+
+      console.log(chalk.cyan('\n📊 Project Understanding:'));
+      console.log(chalk.gray(`  Purpose: ${this.projectContext.purpose}`));
+      console.log(chalk.gray(`  Type: ${this.projectContext.appType}`));
+      console.log(chalk.gray(`  Audience: ${this.projectContext.targetAudience}`));
+      console.log(chalk.gray(`  Category: ${this.projectContext.category}`));
+      console.log(
+        chalk.gray(`  Features: ${this.projectContext.keyFeatures.slice(0, 5).join(', ')}`)
+      );
+      console.log(chalk.gray(`  Screens: ${this.projectContext.mainScreens.length} detected\n`));
+
+      if (this.projectContext.description) {
+        console.log(chalk.cyan(`💡 "${this.projectContext.description}"\n`));
+      }
+    } catch (error) {
+      spinner.fail('Analysis failed');
+      Logger.warning(`${error}`);
+    }
+  }
+
+  private async extractColorPalette(): Promise<void> {
+    if (!this.projectInfo) return;
+
+    const { extractColors } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'extractColors',
+        message: '🎨 Extract real color palette from your app code?',
+        default: true,
+      },
+    ]);
+
+    if (!extractColors) {
+      Logger.info('Using default color palette');
+      return;
+    }
+
+    const spinner = ora('🎨 Extracting colors from code...').start();
+
+    try {
+      const extractor = new ColorExtractor(this.projectInfo.path);
+      this.colorPalette = await extractor.extractPalette();
+
+      spinner.succeed('Color palette extracted');
+
+      console.log(chalk.cyan('\n🎨 Detected Color Palette:'));
+      if (this.colorPalette.primary.length > 0) {
+        console.log(
+          chalk.hex(this.colorPalette.primary[0])(
+            `  Primary: ${this.colorPalette.primary.join(', ')}`
+          )
+        );
+      }
+      if (this.colorPalette.secondary.length > 0) {
+        console.log(
+          chalk.hex(this.colorPalette.secondary[0])(
+            `  Secondary: ${this.colorPalette.secondary.join(', ')}`
+          )
+        );
+      }
+      if (this.colorPalette.accent.length > 0) {
+        console.log(
+          chalk.hex(this.colorPalette.accent[0])(
+            `  Accent: ${this.colorPalette.accent.join(', ')}`
+          )
+        );
+      }
+      console.log(chalk.gray(`  Total: ${this.colorPalette.all.length} unique colors found\n`));
+    } catch (error) {
+      spinner.fail('Color extraction failed');
+      Logger.warning(`${error}`);
+    }
+  }
+
   private async analyzeBranding(): Promise<void> {
     if (!this.projectInfo) return;
 
@@ -136,19 +248,24 @@ class AIPublisher {
 
     try {
       const outputDir = path.join(process.cwd(), 'temp_assets', this.projectInfo.name);
-
       const generator = new BrandingGenerator(outputDir);
 
-      const features = await Scanner.getProjectFeatures(this.projectInfo.packageJson);
-      const appType = this.guessAppType(features);
+      const features =
+        this.projectContext?.keyFeatures ||
+        (await Scanner.getProjectFeatures(this.projectInfo.packageJson));
+      const appType = this.projectContext?.appType || this.guessAppType(features);
+
+      // Use extracted palette if available
+      const palette = this.colorPalette?.primary;
 
       this.brandingAssets = await generator.generateBranding(
         this.projectInfo.name,
         appType,
-        features
+        features,
+        palette
       );
 
-      spinner.succeed('Branding assets generated');
+      spinner.succeed('Branding assets generated with real colors');
     } catch (error) {
       spinner.fail('Failed to generate branding');
       Logger.error(`${error}`);
@@ -189,13 +306,15 @@ class AIPublisher {
 
     try {
       const generator = new MetadataGenerator();
-      const features = await Scanner.getProjectFeatures(this.projectInfo.packageJson);
+      const features =
+        this.projectContext?.keyFeatures ||
+        (await Scanner.getProjectFeatures(this.projectInfo.packageJson));
 
       this.metadata = await generator.generateMetadata({
-        appName: this.projectInfo.name,
-        appType: this.guessAppType(features),
+        appName: this.projectContext?.description || this.projectInfo.name,
+        appType: this.projectContext?.appType || this.guessAppType(features),
         features,
-        targetAudience: 'mobile users',
+        targetAudience: this.projectContext?.targetAudience || 'mobile users',
         language: this.config.getConfig().default_language,
       });
 
@@ -258,19 +377,122 @@ class AIPublisher {
       {
         type: 'list',
         name: 'screenshotChoice',
-        message: 'How would you like to handle screenshots?',
+        message: 'How would you like to capture screenshots?',
         choices: [
-          { name: 'Capture from running simulator', value: 'capture' },
-          { name: 'Use existing screenshots', value: 'existing' },
-          { name: 'Skip screenshots for now', value: 'skip' },
+          {
+            name: '🤖 Auto-navigate and capture (Smart - Recommended)',
+            value: 'auto',
+          },
+          { name: '📸 Manual capture from simulator', value: 'manual' },
+          { name: '📁 Use existing screenshots', value: 'existing' },
+          { name: '⏭️  Skip screenshots', value: 'skip' },
         ],
       },
     ]);
 
-    if (screenshotChoice === 'capture') {
+    if (screenshotChoice === 'auto') {
+      await this.autoNavigateAndCapture();
+    } else if (screenshotChoice === 'manual') {
       await this.captureScreenshots();
     } else if (screenshotChoice === 'skip') {
       Logger.warning('Screenshots skipped');
+    }
+  }
+
+  private async autoNavigateAndCapture(): Promise<void> {
+    if (!this.projectInfo) {
+      Logger.error('Project information required');
+      return;
+    }
+
+    if (!this.projectContext) {
+      Logger.warning('Project context not available, using basic navigation');
+      // Create basic context
+      this.projectContext = {
+        description: this.projectInfo.name,
+        purpose: 'Mobile application',
+        targetAudience: 'users',
+        category: 'Lifestyle',
+        keyFeatures: [],
+        appType: 'mobile application',
+        valueProposition: '',
+        mainScreens: ['Home', 'Main'],
+        userFlow: '',
+        detectedScreens: [],
+        detectedFeatures: [],
+      };
+    }
+
+    const screenshotsDir = path.join(process.cwd(), 'temp_assets', 'screenshots');
+
+    // Show navigation plan
+    console.log(chalk.cyan('\n🤖 Smart Navigation Plan:'));
+    console.log(chalk.gray(`  Target screens: ${this.projectContext.mainScreens.length}`));
+    console.log(
+      chalk.gray(
+        `  Expected captures: ${Math.min(5, this.projectContext.mainScreens.length + 2)}`
+      )
+    );
+    console.log(
+      chalk.gray(`  Duration: ~${Math.ceil(this.projectContext.mainScreens.length * 3)}s\n`)
+    );
+
+    const { platform } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'platform',
+        message: 'Which platform is running?',
+        choices: [
+          { name: 'iOS Simulator', value: 'ios' },
+          { name: 'Android Emulator', value: 'android' },
+        ],
+        default: 'ios',
+      },
+    ]);
+
+    const navigator = new AutoNavigator(screenshotsDir, platform);
+
+    // Check if simulator is running
+    const isRunning = await navigator.isSimulatorRunning();
+    if (!isRunning) {
+      Logger.warning(`${platform === 'ios' ? 'iOS Simulator' : 'Android Emulator'} not running`);
+      Logger.info(`Please start your app first with: npx expo start --${platform}`);
+      return;
+    }
+
+    // Show tips
+    console.log(navigator.getNavigationTips(this.projectContext));
+
+    const { ready } = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'ready',
+        message: 'Is your app fully loaded and ready for auto-navigation?',
+        default: false,
+      },
+    ]);
+
+    if (!ready) {
+      Logger.info('Auto-navigation cancelled');
+      return;
+    }
+
+    const spinner = ora('🤖 Auto-navigating and capturing screenshots...').start();
+
+    try {
+      this.screenshots = await navigator.navigateAndCapture(this.projectContext);
+      spinner.succeed(`Captured ${this.screenshots.length} screenshots automatically`);
+
+      if (this.screenshots.length > 0) {
+        console.log(chalk.green('\n✓ Screenshots captured successfully:'));
+        this.screenshots.forEach((s, i) => {
+          console.log(chalk.gray(`  ${i + 1}. ${path.basename(s.path)}`));
+        });
+      }
+    } catch (error) {
+      spinner.fail('Auto-navigation failed');
+      Logger.error(`${error}`);
+      Logger.info('You can try manual capture or add screenshots later');
     }
   }
 

@@ -81,3 +81,25 @@ export interface GenerateTextOptions {
   targetAudience?: string;
   language?: string;
 }
+
+export interface ProjectContext {
+  description: string;
+  purpose: string;
+  targetAudience: string;
+  category: string;
+  keyFeatures: string[];
+  appType: string;
+  valueProposition: string;
+  mainScreens: string[];
+  userFlow: string;
+  detectedScreens: string[];
+  detectedFeatures: string[];
+}
+
+export interface ColorPalette {
+  primary: string[];
+  secondary: string[];
+  accent: string[];
+  neutral: string[];
+  all: string[];
+}

@@ -13,6 +13,7 @@ The AI App Publisher System is a local automation tool that generates all the vi
 
 ## ✨ Features
 
+### Core Features
 - 🔍 **Smart Project Detection** - Automatically detects Expo or React Native projects
 - 🎨 **AI-Powered Branding** - Generates beautiful logos and icons using DALL-E or Replicate
 - ✍️ **ASO-Optimized Text** - Creates compelling descriptions with GPT-4
@@ -20,6 +21,15 @@ The AI App Publisher System is a local automation tool that generates all the vi
 - 🖼️ **Image Optimization** - Resizes and compresses assets with Sharp
 - 📦 **Complete Export** - Organizes everything into a publish-ready structure
 - 🎯 **Interactive CLI** - User-friendly command-line interface
+
+### 🤖 Intelligent Features (NEW!)
+- 🧠 **Deep Project Analysis** - Reads code and README to understand your app
+- 🎨 **Real Color Extraction** - Extracts actual colors from your codebase
+- 🤖 **Auto-Navigation** - Automatically navigates and captures key screens
+- 🎯 **Context-Aware Assets** - Uses real data for professional branding
+- 📊 **Smart Metadata** - Generates optimized descriptions based on code analysis
+
+[Learn more about Intelligent Features →](docs/INTELLIGENT_FEATURES.md)
 
 ## 🚀 Quick Start
 

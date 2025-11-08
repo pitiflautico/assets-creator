@@ -40,15 +40,18 @@ export class BrandingGenerator {
   async generateBranding(
     appName: string,
     appType: string,
-    features: string[] = []
+    features: string[] = [],
+    customPalette?: string[]
   ): Promise<BrandingAssets> {
     Logger.step('Generating branding assets...');
 
     await ensureDir(this.outputDir);
 
-    // Generate color palette first
-    const palette = await this.generateColorPalette(appName, appType);
-    Logger.success(`Color palette generated: ${palette.join(', ')}`);
+    // Use custom palette or generate one
+    const palette = customPalette || (await this.generateColorPalette(appName, appType));
+    Logger.success(
+      `Color palette ${customPalette ? 'using real colors' : 'generated'}: ${palette.slice(0, 3).join(', ')}`
+    );
 
     // Generate app icon
     const iconPrompt = this.createIconPrompt(appName, appType, features, palette);
