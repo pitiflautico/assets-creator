@@ -1,0 +1,58 @@
+{
+  "name": "@assets-creator/core",
+  "version": "1.0.0",
+  "description": "Sistema inteligente de creación de assets para apps con Replicate AI - genera textos, imágenes, metadatos y optimización ASO",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "assets-creator": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/cli.ts",
+    "start": "node dist/cli.js",
+    "test": "jest",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "replicate",
+    "ai",
+    "app-store-optimization",
+    "aso",
+    "metadata-generator",
+    "image-generation",
+    "app-marketing",
+    "assets",
+    "screenshots",
+    "app-store"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "replicate": "^0.31.0",
+    "openai": "^4.20.0",
+    "commander": "^11.1.0",
+    "chalk": "^4.1.2",
+    "ora": "^5.4.1",
+    "inquirer": "^8.2.5",
+    "sharp": "^0.33.0",
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1",
+    "js-yaml": "^4.1.0",
+    "glob": "^10.3.10",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/inquirer": "^8.2.10",
+    "@types/js-yaml": "^4.0.9",
+    "typescript": "^5.3.2",
+    "tsx": "^4.6.2",
+    "@types/jest": "^29.5.8",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
