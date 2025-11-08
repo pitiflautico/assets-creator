@@ -9,6 +9,7 @@ import inquirer from 'inquirer';
 import chalk from 'chalk';
 import ora from 'ora';
 import path from 'path';
+import { Command } from 'commander';
 import { Scanner } from './scanner';
 import { IntelligentAnalyzer } from './analyzer';
 import { ColorExtractor } from './color-extractor';
@@ -37,12 +38,18 @@ class AIPublisher {
   private brandingAssets?: BrandingAssets;
   private metadata?: MetadataInfo;
   private screenshots: ScreenshotInfo[] = [];
+  private projectPath?: string;
 
-  async run(): Promise<void> {
+  async run(options?: { projectPath?: string; skipInteractive?: boolean }): Promise<void> {
     this.printBanner();
 
     // Load configuration
     await this.config.load();
+
+    // Set project path if provided
+    if (options?.projectPath) {
+      this.projectPath = options.projectPath;
+    }
 
     // Main workflow with intelligent analysis
     await this.selectProject();
@@ -68,23 +75,31 @@ class AIPublisher {
   }
 
   private async selectProject(): Promise<void> {
-    const answers = await inquirer.prompt([
-      {
-        type: 'input',
-        name: 'projectPath',
-        message: 'Enter the path to your React Native/Expo project:',
-        default: process.cwd(),
-        validate: (input) => {
-          if (!input) return 'Project path is required';
-          return true;
+    let projectPath: string = this.projectPath || '';
+
+    // If no project path provided via CLI, ask user
+    if (!projectPath) {
+      const answers = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'projectPath',
+          message: 'Enter the path to your React Native/Expo project:',
+          default: process.cwd(),
+          validate: (input) => {
+            if (!input) return 'Project path is required';
+            return true;
+          },
         },
-      },
-    ]);
+      ]);
+      projectPath = answers.projectPath;
+    } else {
+      console.log(chalk.gray(`\nProject path: ${projectPath}`));
+    }
 
     const spinner = ora('Scanning project...').start();
 
     try {
-      const scanner = new Scanner(answers.projectPath);
+      const scanner = new Scanner(projectPath);
       this.projectInfo = await scanner.scan();
 
       spinner.succeed('Project scanned successfully');
@@ -380,7 +395,11 @@ class AIPublisher {
         message: 'How would you like to capture screenshots?',
         choices: [
           {
-            name: '🤖 Auto-navigate and capture (Smart - Recommended)',
+            name: '👆 Captura Guiada - Tú navegas, yo capturo (Recomendado)',
+            value: 'guided',
+          },
+          {
+            name: '🤖 Auto-navigate and capture (Smart)',
             value: 'auto',
           },
           { name: '📸 Manual capture from simulator', value: 'manual' },
@@ -390,7 +409,9 @@ class AIPublisher {
       },
     ]);
 
-    if (screenshotChoice === 'auto') {
+    if (screenshotChoice === 'guided') {
+      await this.guidedScreenshotCapture();
+    } else if (screenshotChoice === 'auto') {
       await this.autoNavigateAndCapture();
     } else if (screenshotChoice === 'manual') {
       await this.captureScreenshots();
@@ -493,6 +514,53 @@ class AIPublisher {
       spinner.fail('Auto-navigation failed');
       Logger.error(`${error}`);
       Logger.info('You can try manual capture or add screenshots later');
+    }
+  }
+
+  private async guidedScreenshotCapture(): Promise<void> {
+    if (!this.projectInfo) return;
+
+    const screenshotsDir = path.join(process.cwd(), 'temp_assets', 'screenshots');
+    const manager = new SimulatorManager(this.projectInfo, screenshotsDir);
+
+    console.log(chalk.cyan('\n📸 Captura Guiada de Screenshots'));
+    console.log(chalk.cyan('═'.repeat(70)));
+    console.log(chalk.gray('Te guiaré para capturar las pantallas más importantes\n'));
+
+    const { platform, screenCount } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'platform',
+        message: '¿Qué plataforma está corriendo?',
+        choices: [
+          { name: 'iOS Simulator', value: 'ios' },
+          { name: 'Android Emulator', value: 'android' },
+        ],
+        default: 'ios',
+      },
+      {
+        type: 'number',
+        name: 'screenCount',
+        message: '¿Cuántas pantallas quieres capturar?',
+        default: 5,
+        validate: (input) => {
+          if (input < 1 || input > 10) return 'Ingresa un número entre 1 y 10';
+          return true;
+        },
+      },
+    ]);
+
+    try {
+      this.screenshots = await manager.guidedScreenshotCapture(platform, screenCount);
+
+      if (this.screenshots.length > 0) {
+        console.log(chalk.green('\n✓ Screenshots capturados exitosamente:'));
+        this.screenshots.forEach((s, i) => {
+          console.log(chalk.gray(`  ${i + 1}. ${path.basename(s.path)}`));
+        });
+      }
+    } catch (error) {
+      Logger.error(`Error en captura guiada: ${error}`);
     }
   }
 
@@ -618,13 +686,43 @@ class AIPublisher {
 
 // Main execution
 async function main() {
-  try {
-    const publisher = new AIPublisher();
-    await publisher.run();
-  } catch (error) {
-    Logger.error(`Fatal error: ${error}`);
-    process.exit(1);
-  }
+  const program = new Command();
+
+  program
+    .name('ai-publisher')
+    .description('AI-powered app publishing system')
+    .version('1.0.0');
+
+  program
+    .command('analyze')
+    .description('Analyze and prepare app for publishing')
+    .option('-p, --project-path <path>', 'Path to React Native/Expo project')
+    .action(async (options) => {
+      try {
+        const publisher = new AIPublisher();
+        await publisher.run({
+          projectPath: options.projectPath,
+        });
+      } catch (error) {
+        Logger.error(`Fatal error: ${error}`);
+        process.exit(1);
+      }
+    });
+
+  // Default command (interactive mode)
+  program
+    .action(async () => {
+      try {
+        const publisher = new AIPublisher();
+        await publisher.run();
+      } catch (error) {
+        Logger.error(`Fatal error: ${error}`);
+        process.exit(1);
+      }
+    });
+
+  // Parse arguments
+  await program.parseAsync(process.argv);
 }
 
 // Run if called directly

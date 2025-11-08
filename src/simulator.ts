@@ -7,6 +7,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
 import fs from 'fs-extra';
+import chalk from 'chalk';
 import { ScreenshotInfo, ProjectInfo } from './types';
 import { Logger, ensureDir } from './utils';
 import { ConfigManager } from './config';
@@ -244,6 +245,107 @@ export class SimulatorManager {
   async waitForUserNavigation(seconds: number = 5): Promise<void> {
     Logger.info(`Waiting ${seconds} seconds for app navigation...`);
     await new Promise((resolve) => setTimeout(resolve, seconds * 1000));
+  }
+
+  /**
+   * Guided screenshot capture - user navigates, system captures
+   */
+  async guidedScreenshotCapture(
+    platform: 'ios' | 'android' = 'ios',
+    screenCount: number = 5
+  ): Promise<ScreenshotInfo[]> {
+    const screenshots: ScreenshotInfo[] = [];
+
+    Logger.step(`📸 Starting guided screenshot capture for ${platform.toUpperCase()}`);
+
+    // Check if simulator/emulator is running
+    const isRunning = platform === 'ios'
+      ? await this.isIOSAvailable()
+      : await this.isAndroidAvailable();
+
+    if (!isRunning) {
+      Logger.error(`${platform === 'ios' ? 'iOS Simulator' : 'Android Emulator'} is not running`);
+      return screenshots;
+    }
+
+    const screenDescriptions = [
+      'Pantalla Principal / Home',
+      'Funcionalidad Principal',
+      'Segunda Funcionalidad',
+      'Pantalla de Configuración/Perfil',
+      'Pantalla Extra/Característica Especial',
+    ];
+
+    for (let i = 0; i < screenCount; i++) {
+      const screenNum = i + 1;
+      const description = screenDescriptions[i] || `Pantalla ${screenNum}`;
+
+      console.log(chalk.cyan(`\n${'═'.repeat(70)}`));
+      console.log(chalk.cyan.bold(`📱 Screenshot ${screenNum}/${screenCount}: ${description}`));
+      console.log(chalk.gray(`   La primera pantalla que ve el usuario al abrir la app`));
+      console.log(chalk.cyan(`${'═'.repeat(70)}\n`));
+
+      // Wait for user to navigate
+      const inquirer = require('inquirer');
+      const { ready } = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'ready',
+          message: `Navega a "${description}" y presiona Enter cuando estés listo para capturar`,
+          default: true,
+        },
+      ]);
+
+      if (!ready) {
+        Logger.warning(`Screenshot ${screenNum} omitido`);
+        continue;
+      }
+
+      // Capture screenshot
+      const spinner = require('ora')(`Capturando screenshot ${screenNum}...`).start();
+
+      try {
+        const filename = `${platform}_${screenNum}_${this.sanitizeFilename(description)}.png`;
+        const filepath = path.join(this.screenshotsDir, filename);
+
+        if (platform === 'ios') {
+          await execAsync(`xcrun simctl io booted screenshot "${filepath}"`);
+        } else {
+          await execAsync(`adb exec-out screencap -p > "${filepath}"`);
+        }
+
+        const stats = await fs.stat(filepath);
+        if (stats.size > 0) {
+          screenshots.push({
+            platform,
+            path: filepath,
+            size: {
+              width: platform === 'ios' ? 1179 : 1080,
+              height: platform === 'ios' ? 2556 : 2340,
+            },
+          });
+          spinner.succeed(chalk.green(`✓ Screenshot ${screenNum} capturado: ${filename}`));
+        } else {
+          spinner.fail('Screenshot vacío');
+        }
+      } catch (error) {
+        spinner.fail(`Error capturando screenshot ${screenNum}: ${error}`);
+      }
+    }
+
+    Logger.success(`\n✨ Captura completada: ${screenshots.length}/${screenCount} screenshots`);
+    return screenshots;
+  }
+
+  /**
+   * Sanitize filename
+   */
+  private sanitizeFilename(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, '_')
+      .replace(/_+/g, '_')
+      .slice(0, 30);
   }
 
   /**
