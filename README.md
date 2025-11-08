@@ -13,10 +13,19 @@ Assets Creator es una herramienta completa e inteligente que analiza tu aplicaci
 
 ## ✨ Características
 
+### 🎯 Características Avanzadas (NUEVO)
+
+- **📸 Captura de Screenshots Reales**: Captura screenshots directamente de tu simulador iOS/Android (¡no genera imágenes falsas!)
+- **🎨 Extracción de Paleta de Colores**: Analiza tu logo/iconos y extrae la paleta de colores real de tu app
+- **📝 Análisis Inteligente del README con IA**: Lee y comprende tu README para generar metadatos basados en info REAL
+- **🧠 Assets Basados en tu App Real**: Usa tus colores, screenshots reales y análisis profundo del proyecto
+
+### 💫 Características Core
+
 - **🤖 Inteligencia Artificial**: Usa modelos de Replicate (Llama 3, SDXL) para generar contenido de alta calidad
 - **📊 Análisis Inteligente**: Lee tu código, package.json, README y extrae información automáticamente
 - **🎯 ASO (App Store Optimization)**: Optimiza keywords, títulos y descripciones para máxima visibilidad
-- **🎨 Generación de Imágenes**: Crea iconos, screenshots y banners con IA
+- **🎨 Generación de Imágenes**: Crea iconos, screenshots y banners con IA o captura del simulador
 - **📈 Market Insights**: Conocimiento incorporado de qué funciona en app stores
 - **🌍 Multi-plataforma**: Soporta iOS, Android, Web y Desktop
 - **⚡ Rápido y Fácil**: CLI simple y modo interactivo
@@ -83,6 +92,58 @@ OUTPUT_DIR=./generated_assets
 ```bash
 assets-creator config
 ```
+
+## 🌟 Características Avanzadas
+
+### 📸 Capturar Screenshots del Simulador
+
+En lugar de generar screenshots con IA (que pueden verse artificiales), captura screenshots **REALES** de tu app:
+
+```bash
+# Abre tu simulador iOS o emulador Android
+open -a Simulator
+
+# Captura screenshots reales
+assets-creator capture --count 5
+
+# O modo interactivo (tú decides cuándo capturar)
+assets-creator capture --interactive
+```
+
+**Ventajas:**
+- Screenshots 100% reales de TU app
+- Capturas exactas de tu UI
+- Mucho mejor que imágenes generadas con IA
+
+### 🎨 Extracción Automática de Paleta de Colores
+
+El sistema analiza tu logo/iconos existentes y extrae la paleta de colores:
+
+```bash
+assets-creator analyze
+# → Detecta: Color primario #007AFF, secundarios #5AC8FA, #FF9500
+```
+
+Luego usa **TUS colores reales** al generar assets, no colores aleatorios.
+
+### 📝 Análisis Inteligente del README
+
+El sistema lee tu README con IA y extrae:
+- Propósito principal de la app
+- Audiencia target
+- Features clave
+- USPs (Unique Selling Points)
+- Categoría correcta
+- Tono y estilo
+
+**Ejemplo:**
+```markdown
+# Tabata Timer
+App de entrenamiento HIIT...
+```
+→ Detecta: Categoría "Health & Fitness", audiencia "atletas", keywords "tabata, hiit, workout"
+
+**[Ver guía completa de uso →](./USAGE.md)**
 
 ## 🎯 Uso
 
