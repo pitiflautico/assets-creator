@@ -193,15 +193,18 @@ export class EnhancedAnalyzer {
       console.log(`  → Dispositivos: ${simulators.devices.join(', ')}`);
 
       if (this.config.preferences.generateImages) {
-        console.log('\n💡 ¿Quieres capturar screenshots del simulador ahora?');
-        console.log('   (Se capturarán automáticamente en 5 segundos...)');
+        console.log('\n💡 Captura de Screenshots Disponible');
+        console.log('   Puedes capturar screenshots reales del simulador ahora.');
+        console.log('   Se te guiará para capturar las pantallas más importantes.');
+        console.log('');
 
         // Pequeña pausa para que el usuario vea el mensaje
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         try {
-          capturedScreenshots = await this.screenshotCapture.captureMultipleScreenshots(
-            Math.min(this.config.preferences.imageCount || 3, 5)
+          // Usar captura guiada que indica qué pantallas capturar
+          const appCategory = baseData.category || '';
+          capturedScreenshots = await this.screenshotCapture.captureWithGuidance(appCategory
           );
 
           if (capturedScreenshots.length > 0) {
@@ -242,6 +245,13 @@ export class EnhancedAnalyzer {
    */
   async captureScreenshotsInteractive(): Promise<string[]> {
     return await this.screenshotCapture.captureInteractive();
+  }
+
+  /**
+   * Capturar screenshots con guía (te indica qué pantallas capturar)
+   */
+  async captureScreenshotsGuided(appType?: string): Promise<string[]> {
+    return await this.screenshotCapture.captureWithGuidance(appType);
   }
 
   /**

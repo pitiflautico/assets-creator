@@ -217,4 +217,170 @@ export class ScreenshotCapture {
       capture();
     });
   }
+
+  /**
+   * Captura screenshots con guía de navegación
+   * Indica al usuario exactamente qué pantallas capturar
+   */
+  async captureWithGuidance(appType?: string): Promise<string[]> {
+    const screenshots: string[] = [];
+    const simulators = await this.detectSimulators();
+
+    if (!simulators.ios && !simulators.android) {
+      console.log('\n⚠️  No se detectaron simuladores en ejecución.');
+      console.log('   Abre el simulador iOS o emulador Android primero.\n');
+      return screenshots;
+    }
+
+    console.log('\n📸 Captura Guiada de Screenshots');
+    console.log('═══════════════════════════════════════════════════════');
+    console.log('Te guiaré para capturar las pantallas más importantes');
+    console.log('');
+
+    // Definir las pantallas clave según el tipo de app
+    const screensToCapture = this.getKeyScreens(appType);
+
+    const readline = require('readline');
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+    });
+
+    let currentScreenIndex = 0;
+
+    return new Promise(resolve => {
+      const captureNext = () => {
+        if (currentScreenIndex >= screensToCapture.length) {
+          rl.close();
+          console.log('\n✅ ¡Captura completada!');
+          console.log(`   ${screenshots.length} screenshots guardados\n`);
+          resolve(screenshots);
+          return;
+        }
+
+        const screen = screensToCapture[currentScreenIndex];
+
+        console.log(`\n📱 Screenshot ${currentScreenIndex + 1}/${screensToCapture.length}: ${screen.name}`);
+        console.log(`   ${screen.description}`);
+        console.log('');
+
+        rl.question('Presiona ENTER cuando estés listo para capturar (s para saltar, q para salir): ', async (answer: string) => {
+          if (answer.toLowerCase() === 'q') {
+            rl.close();
+            console.log(`\n✅ ${screenshots.length} screenshots capturados\n`);
+            resolve(screenshots);
+            return;
+          }
+
+          if (answer.toLowerCase() === 's') {
+            console.log('   ⏭️  Saltando...');
+            currentScreenIndex++;
+            captureNext();
+            return;
+          }
+
+          // Capturar
+          let screenshot: string | null = null;
+          const filename = `${screen.filename || `screenshot-${currentScreenIndex + 1}`}.png`;
+
+          if (simulators.ios) {
+            screenshot = await this.captureIOSScreenshot(filename);
+          } else if (simulators.android) {
+            screenshot = await this.captureAndroidScreenshot(filename);
+          }
+
+          if (screenshot) {
+            screenshots.push(screenshot);
+            console.log(`   ✅ Capturado: ${filename}`);
+          } else {
+            console.log('   ❌ Error al capturar');
+          }
+
+          currentScreenIndex++;
+          captureNext();
+        });
+      };
+
+      captureNext();
+    });
+  }
+
+  /**
+   * Define las pantallas clave a capturar según el tipo de app
+   */
+  private getKeyScreens(appType?: string): Array<{
+    name: string;
+    description: string;
+    filename?: string;
+  }> {
+    // Pantallas genéricas que aplican a todas las apps
+    const genericScreens = [
+      {
+        name: 'Pantalla Principal / Home',
+        description: 'La primera pantalla que ve el usuario al abrir la app',
+        filename: '01-home',
+      },
+      {
+        name: 'Menú Principal',
+        description: 'Menú de navegación, sidebar, o tab bar con las opciones principales',
+        filename: '02-menu',
+      },
+      {
+        name: 'Funcionalidad Principal #1',
+        description: 'La característica o función más importante de la app',
+        filename: '03-main-feature',
+      },
+      {
+        name: 'Funcionalidad Principal #2',
+        description: 'Segunda característica más importante (si aplica)',
+        filename: '04-secondary-feature',
+      },
+      {
+        name: 'Configuraciones o Perfil',
+        description: 'Pantalla de ajustes, perfil de usuario, o personalización',
+        filename: '05-settings',
+      },
+    ];
+
+    // Pantallas específicas según categoría
+    const categoryScreens: Record<string, typeof genericScreens> = {
+      'fitness': [
+        { name: 'Inicio de Entrenamiento', description: 'Pantalla donde se inicia o selecciona el workout', filename: '01-workout-start' },
+        { name: 'Entrenamiento en Progreso', description: 'Vista durante el ejercicio con timer/contador', filename: '02-workout-active' },
+        { name: 'Estadísticas / Progreso', description: 'Gráficas, historial, o métricas de rendimiento', filename: '03-stats' },
+        { name: 'Lista de Ejercicios', description: 'Catálogo de ejercicios disponibles', filename: '04-exercises' },
+        { name: 'Perfil / Logros', description: 'Perfil del usuario con logros o objetivos', filename: '05-profile' },
+      ],
+      'music': [
+        { name: 'Reproductor Principal', description: 'Player con controles de reproducción', filename: '01-player' },
+        { name: 'Biblioteca / Lista', description: 'Lista de canciones, álbumes, o playlists', filename: '02-library' },
+        { name: 'Búsqueda', description: 'Función de búsqueda de música', filename: '03-search' },
+        { name: 'Playlist o Colección', description: 'Vista de una playlist o colección específica', filename: '04-playlist' },
+        { name: 'Configuración de Audio', description: 'Ecualizador, efectos, o ajustes de sonido', filename: '05-audio-settings' },
+      ],
+      'productivity': [
+        { name: 'Dashboard Principal', description: 'Vista general con resumen de tareas/proyectos', filename: '01-dashboard' },
+        { name: 'Lista de Tareas', description: 'Lista principal de items/tareas', filename: '02-task-list' },
+        { name: 'Detalle de Tarea', description: 'Vista detallada de un item individual', filename: '03-task-detail' },
+        { name: 'Calendario o Timeline', description: 'Vista de calendario o línea de tiempo', filename: '04-calendar' },
+        { name: 'Filtros o Categorías', description: 'Organización por categorías o proyectos', filename: '05-categories' },
+      ],
+    };
+
+    // Detectar categoría del tipo de app
+    if (appType) {
+      const type = appType.toLowerCase();
+      if (type.includes('fitness') || type.includes('workout') || type.includes('health')) {
+        return categoryScreens['fitness'];
+      }
+      if (type.includes('music') || type.includes('audio') || type.includes('player')) {
+        return categoryScreens['music'];
+      }
+      if (type.includes('productivity') || type.includes('task') || type.includes('todo')) {
+        return categoryScreens['productivity'];
+      }
+    }
+
+    return genericScreens;
+  }
 }

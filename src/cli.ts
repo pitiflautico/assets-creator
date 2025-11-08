@@ -166,6 +166,47 @@ program
   });
 
 /**
+ * Comando: capture
+ * Captura screenshots con guía
+ */
+program
+  .command('capture')
+  .description('Captura screenshots del simulador con guía paso a paso')
+  .option('-p, --project <path>', 'Ruta al proyecto (para detectar tipo de app)', process.cwd())
+  .option('-t, --type <type>', 'Tipo de app: fitness, music, productivity, etc.')
+  .action(async (options) => {
+    try {
+      console.log(chalk.blue.bold('\n📸 Captura Guiada de Screenshots\n'));
+
+      const creator = new AssetsCreator();
+
+      // Si hay un proyecto, analizarlo primero para detectar el tipo
+      let appType = options.type;
+
+      if (!appType && options.project) {
+        console.log('Analizando proyecto para detectar tipo de app...\n');
+        const appData = await creator.analyzeOnly(options.project);
+        appType = appData.category;
+      }
+
+      // Capturar con guía
+      const screenshots = await creator.captureScreenshots(options.project, appType);
+
+      if (screenshots.length > 0) {
+        console.log(chalk.green.bold(`\n✅ ${screenshots.length} screenshots capturados!`));
+        console.log(chalk.gray('Ubicación: ' + screenshots[0].substring(0, screenshots[0].lastIndexOf('/'))));
+      } else {
+        console.log(chalk.yellow('\n⚠️  No se capturaron screenshots'));
+      }
+
+      console.log('');
+    } catch (error: any) {
+      console.error(chalk.red.bold('\n❌ Error:'), error.message);
+      process.exit(1);
+    }
+  });
+
+/**
  * Comando: interactive
  * Modo interactivo con preguntas
  */

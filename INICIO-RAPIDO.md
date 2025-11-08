@@ -38,6 +38,28 @@ npm run generate
 npm run generate -- -p /ruta/a/tu/proyecto
 ```
 
+### Capturar Screenshots con Guía
+
+**NUEVA FUNCIONALIDAD:** Captura screenshots del simulador con guía paso a paso que te indica exactamente qué pantallas capturar (menú, features principales, etc.)
+
+```bash
+# Capturar screenshots con guía automática
+npm run dev -- capture
+
+# Especificar tipo de app para guía personalizada
+npm run dev -- capture -t fitness
+npm run dev -- capture -t music
+
+# Analizar proyecto y capturar con guía específica
+npm run dev -- capture -p /ruta/a/tu/proyecto
+```
+
+La captura guiada te dirá:
+- 📱 Qué pantalla navegar (ej: "Pantalla Principal / Home")
+- 📝 Descripción de qué debe mostrar
+- ✅ Confirma cuando captures cada una
+- 🎯 Pantallas específicas según tu tipo de app (fitness, music, productivity, etc.)
+
 ### Otros comandos
 
 ```bash
@@ -69,9 +91,12 @@ npm run generate -- -p /Users/danielperezpinazo/Projects/tabata
    - Detecta la categoría dinámicamente (NO listas hardcodeadas)
    - Genera keywords específicos para TU app
 
-2. **Captura de Screenshots:**
-   - Intenta capturar del simulador iOS/Android si está corriendo
-   - Si no hay simulador, genera con IA
+2. **Captura de Screenshots con Guía:**
+   - Detecta simulador iOS/Android automáticamente
+   - **Te guía paso a paso** indicando qué pantallas capturar
+   - Pantallas específicas según tu tipo de app (fitness: workout, stats, exercises, etc.)
+   - Navegas manualmente, el sistema captura cuando presionas ENTER
+   - Si no hay simulador, genera con IA como fallback
 
 3. **Generación de Assets:**
    - Crea carpeta con el nombre de tu app

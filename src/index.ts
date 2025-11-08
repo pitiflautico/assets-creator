@@ -232,15 +232,15 @@ export class AssetsCreator {
   }
 
   /**
-   * Solo captura screenshots del simulador
+   * Solo captura screenshots del simulador con guía
    */
-  async captureScreenshots(projectPath?: string): Promise<string[]> {
+  async captureScreenshots(projectPath?: string, appType?: string): Promise<string[]> {
     if (projectPath) {
       this.projectPath = projectPath;
       this.enhancedAnalyzer = new EnhancedAnalyzer(projectPath, this.config);
     }
 
-    return await this.enhancedAnalyzer.captureScreenshotsInteractive();
+    return await this.enhancedAnalyzer.captureScreenshotsGuided(appType);
   }
 
   /**
