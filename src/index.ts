@@ -2,6 +2,7 @@ import * as path from 'path';
 import { EnhancedAnalyzer } from './analyzers/EnhancedAnalyzer';
 import { TextGenerator } from './generators/TextGenerator';
 import { ImageGenerator } from './generators/ImageGenerator';
+import { DesignBriefGenerator } from './generators/DesignBriefGenerator';
 import { ASOOptimizer } from './aso/ASOOptimizer';
 import { getDefaultConfig, validateConfig } from './config/config';
 import { saveJSON, saveYAML, saveText, ensureDir } from './utils/fileUtils';
@@ -16,6 +17,7 @@ export class AssetsCreator {
   private enhancedAnalyzer: EnhancedAnalyzer;
   private textGenerator: TextGenerator;
   private imageGenerator: ImageGenerator;
+  private designBriefGenerator: DesignBriefGenerator;
   private asoOptimizer: ASOOptimizer;
   private projectPath: string;
 
@@ -34,7 +36,21 @@ export class AssetsCreator {
     this.enhancedAnalyzer = new EnhancedAnalyzer(this.projectPath, this.config);
     this.textGenerator = new TextGenerator(this.config);
     this.imageGenerator = new ImageGenerator(this.config);
+    this.designBriefGenerator = new DesignBriefGenerator(this.config);
     this.asoOptimizer = new ASOOptimizer(this.config);
+  }
+
+  /**
+   * Sanitiza nombre de app para usarlo como nombre de carpeta
+   */
+  private sanitizeAppName(name: string): string {
+    return name
+      .toLowerCase()
+      .replace(/@/g, '')
+      .replace(/\//g, '-')
+      .replace(/[^a-z0-9-]/g, '_')
+      .replace(/_{2,}/g, '_')
+      .replace(/^_|_$/g, '');
   }
 
   /**
@@ -59,6 +75,14 @@ export class AssetsCreator {
       // 1. Análisis INTELIGENTE completo
       console.log('🔍 Análisis Inteligente del Proyecto\n');
       const analysisResult = await this.enhancedAnalyzer.analyze();
+
+      // Crear carpeta con nombre de la app
+      const appFolderName = this.sanitizeAppName(analysisResult.name);
+      const outputDir = path.join(process.cwd(), 'generated_assets', appFolderName);
+      this.config.outputDir = outputDir;
+      ensureDir(outputDir);
+
+      console.log(`\n📁 Carpeta de salida: ${appFolderName}/\n`);
 
       // Extraer datos del análisis mejorado
       const appData: AppData = {
@@ -121,7 +145,15 @@ export class AssetsCreator {
       const socialMedia = await this.textGenerator.generateSocialMediaContent(appData);
       const websiteContent = await this.textGenerator.generateWebsiteContent(appData);
 
-      // 6. Obtener insights de mercado
+      // 6. Generar BRIEF DE DISEÑO COMPLETO
+      console.log('\n📋 Generando Brief de Diseño Completo...\n');
+      const designBrief = await this.designBriefGenerator.generateCompleteBrief(
+        appData,
+        analysisResult
+      );
+      console.log('  ✓ Brief de diseño generado');
+
+      // 7. Obtener insights de mercado
       console.log('\n📈 Analizando mercado...\n');
       const marketInsights = await this.asoOptimizer.getMarketInsights(appData);
 
@@ -142,7 +174,7 @@ export class AssetsCreator {
       };
 
       // Guardar resultados con info mejorada
-      await this.saveResults(bundle, appData, analysisResult);
+      await this.saveResults(bundle, appData, analysisResult, designBrief);
 
       console.log('\n✅ ¡GENERACIÓN COMPLETADA EXITOSAMENTE!');
       console.log('═══════════════════════════════════════════════════════');
@@ -194,11 +226,21 @@ export class AssetsCreator {
   /**
    * Guarda todos los resultados
    */
-  private async saveResults(bundle: AssetBundle, appData: AppData, analysisResult: any): Promise<void> {
+  private async saveResults(
+    bundle: AssetBundle,
+    appData: AppData,
+    analysisResult: any,
+    designBrief: string
+  ): Promise<void> {
     console.log('\n💾 Guardando resultados...');
 
     const outputDir = this.config.outputDir;
     ensureDir(outputDir);
+
+    // Guardar BRIEF DE DISEÑO COMPLETO (lo primero!)
+    const briefPath = path.join(outputDir, '00-BRIEF-DE-DISEÑO.md');
+    saveText(briefPath, designBrief);
+    console.log(`  ✓ 📋 Brief de Diseño: ${briefPath}`);
 
     // Guardar metadatos
     const metadataPath = path.join(outputDir, 'metadata.json');
@@ -263,7 +305,13 @@ export class AssetsCreator {
     saveText(readmePath, readmeContent);
     console.log(`  ✓ README: ${readmePath}`);
 
-    console.log(`\n📁 Todos los archivos guardados en: ${outputDir}`);
+    // Extraer solo el nombre de la carpeta
+    const appFolder = path.basename(outputDir);
+
+    console.log(`\n📁 Todos los archivos guardados en: generated_assets/${appFolder}/`);
+    console.log(`\n🎯 IMPORTANTE: Lee primero el archivo:`);
+    console.log(`   📋 00-BRIEF-DE-DISEÑO.md`);
+    console.log(`\nEste documento contiene TODA la información necesaria para crear los assets.`);
   }
 
   /**
