@@ -52,12 +52,12 @@ export class BrandingGenerator {
 
     // Generate app icon
     const iconPrompt = this.createIconPrompt(appName, appType, features, palette);
-    const iconPath = await this.generateImage(iconPrompt, 'icon_1024.png', 1024);
+    const iconPath = await this.generateImage(iconPrompt, 'icon_1024.png', 1024, 'icon');
     Logger.success('App icon generated');
 
     // Generate splash screen
     const splashPrompt = this.createSplashPrompt(appName, appType, palette);
-    const splashPath = await this.generateImage(splashPrompt, 'splash.png', 2048);
+    const splashPath = await this.generateImage(splashPrompt, 'splash.png', 2048, 'splash');
     Logger.success('Splash screen generated');
 
     const brandingAssets: BrandingAssets = {
@@ -80,28 +80,43 @@ export class BrandingGenerator {
   private async generateImage(
     prompt: string,
     filename: string,
-    size: number = 1024
+    size: number = 1024,
+    type: 'icon' | 'splash' | 'general' = 'general'
   ): Promise<string> {
     const outputPath = path.join(this.outputDir, filename);
 
     try {
-      // Try OpenAI DALL-E first if available
+      // Try Replicate FIRST (more reliable for image generation)
+      if (this.replicate) {
+        Logger.info(`Generating image with Replicate: ${filename}`);
+        await this.generateWithReplicate(prompt, outputPath, size, type);
+        return outputPath;
+      }
+
+      // Fallback to OpenAI DALL-E
       if (this.openai) {
         Logger.info(`Generating image with OpenAI DALL-E: ${filename}`);
         await this.generateWithOpenAI(prompt, outputPath, size);
         return outputPath;
       }
 
-      // Fallback to Replicate
-      if (this.replicate) {
-        Logger.info(`Generating image with Replicate: ${filename}`);
-        await this.generateWithReplicate(prompt, outputPath, size);
-        return outputPath;
-      }
-
       throw new Error('No AI image generation service configured');
     } catch (error) {
-      Logger.error(`Failed to generate image: ${error}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      Logger.error(`Failed to generate image: ${errorMessage}`);
+
+      // If OpenAI fails but Replicate is available, try Replicate
+      if (errorMessage.includes('401') || errorMessage.includes('organization')) {
+        Logger.warning('OpenAI authentication failed. Trying Replicate...');
+        if (this.replicate && !errorMessage.includes('Replicate')) {
+          try {
+            await this.generateWithReplicate(prompt, outputPath, size, type);
+            return outputPath;
+          } catch (replicateError) {
+            Logger.error(`Replicate also failed: ${replicateError}`);
+          }
+        }
+      }
 
       // Create a placeholder image
       Logger.warning('Creating placeholder image instead');
@@ -148,36 +163,71 @@ export class BrandingGenerator {
   }
 
   /**
-   * Generate image using Replicate (SDXL or Flux)
+   * Generate image using Replicate (SDXL, Flux, or specialized models)
    */
   private async generateWithReplicate(
     prompt: string,
     outputPath: string,
-    size: number
+    size: number,
+    type: 'icon' | 'splash' | 'general' = 'general'
   ): Promise<void> {
     if (!this.replicate) {
       throw new Error('Replicate not initialized');
     }
 
-    // Use SDXL for image generation
-    const output = await this.replicate.run(
-      'stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b',
-      {
-        input: {
-          prompt: prompt,
-          width: size,
-          height: size,
-          num_outputs: 1,
-        },
-      }
-    ) as string[];
+    // Select best model based on image type
+    let model: string;
+    let input: any;
 
-    if (!output || output.length === 0) {
-      throw new Error('No output from Replicate');
+    if (type === 'icon') {
+      // Use Flux for high-quality icons/logos
+      model = 'black-forest-labs/flux-schnell';
+      input = {
+        prompt: prompt,
+        num_outputs: 1,
+        aspect_ratio: '1:1',
+        output_format: 'png',
+        output_quality: 100,
+      };
+      Logger.info('Using Flux Schnell for icon generation');
+    } else if (type === 'splash') {
+      // Use SDXL for splash screens (supports larger sizes)
+      model = 'stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b';
+      input = {
+        prompt: prompt,
+        width: size,
+        height: size,
+        num_outputs: 1,
+        num_inference_steps: 40,
+      };
+      Logger.info('Using SDXL for splash screen');
+    } else {
+      // Default: SDXL for general images
+      model = 'stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b';
+      input = {
+        prompt: prompt,
+        width: size,
+        height: size,
+        num_outputs: 1,
+      };
+    }
+
+    const output = await this.replicate.run(model as any, { input }) as string | string[];
+
+    // Handle different output formats
+    let imageUrl: string;
+    if (Array.isArray(output)) {
+      if (output.length === 0) {
+        throw new Error('No output from Replicate');
+      }
+      imageUrl = output[0];
+    } else if (typeof output === 'string') {
+      imageUrl = output;
+    } else {
+      throw new Error('Unexpected output format from Replicate');
     }
 
     // Download image
-    const imageUrl = output[0];
     const imageResponse = await fetch(imageUrl);
     const buffer = await imageResponse.arrayBuffer();
     await fs.writeFile(outputPath, Buffer.from(buffer));

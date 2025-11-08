@@ -99,8 +99,24 @@ export class ConfigManager {
    */
   private validate(): void {
     if (!this.config.openai_api_key && !this.config.replicate_api_key) {
-      Logger.warning('No API keys configured. AI features will not work.');
-      Logger.warning('Please set OPENAI_API_KEY or REPLICATE_API_TOKEN in .env file');
+      Logger.warning('⚠️  No API keys configured. AI features will not work.');
+      Logger.warning('');
+      Logger.warning('To use AI features, configure at least one service:');
+      Logger.warning('  1. Replicate (recommended): https://replicate.com/account/api-tokens');
+      Logger.warning('  2. OpenAI: https://platform.openai.com/api-keys');
+      Logger.warning('');
+      Logger.warning('Add to .env file:');
+      Logger.warning('  REPLICATE_API_TOKEN=r8_...');
+      Logger.warning('  OPENAI_API_KEY=sk-...');
+      Logger.warning('');
+    } else if (this.config.replicate_api_key && !this.config.openai_api_key) {
+      Logger.info('✓ Replicate configured (image generation available)');
+      Logger.info('  Note: Text generation will use fallback mode');
+    } else if (this.config.openai_api_key && !this.config.replicate_api_key) {
+      Logger.info('✓ OpenAI configured');
+      Logger.warning('  Tip: Add Replicate token for more reliable image generation');
+    } else {
+      Logger.info('✓ Both OpenAI and Replicate configured (full AI features)');
     }
   }
 

@@ -46,10 +46,19 @@ npm install
 3. Configure API keys:
 ```bash
 cp .env.example .env
-# Edit .env and add your API keys:
-# OPENAI_API_KEY=your_key_here
-# REPLICATE_API_TOKEN=your_token_here
+# Edit .env and add at least ONE API key:
+
+# RECOMMENDED: Replicate (easier setup, more reliable)
+# Get token from: https://replicate.com/account/api-tokens
+REPLICATE_API_TOKEN=r8_your_token_here
+
+# OPTIONAL: OpenAI (for GPT-4 text generation)
+# Get key from: https://platform.openai.com/api-keys
+# Note: Requires organization setup and billing
+OPENAI_API_KEY=sk_your_key_here
 ```
+
+**Important:** If you get "401 organization" errors with OpenAI, see [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 
 4. Build the project:
 ```bash
@@ -215,6 +224,35 @@ npm run watch
 ```bash
 npm run dev
 ```
+
+## 🔧 Troubleshooting
+
+### OpenAI Error 401: "You must be a member of an organization"
+
+This is a common issue with OpenAI API keys. **Solution:**
+
+1. **Use Replicate instead** (recommended, easier setup):
+   ```bash
+   # Get token from: https://replicate.com/account/api-tokens
+   REPLICATE_API_TOKEN=r8_your_token_here
+   ```
+
+2. **Or fix OpenAI:**
+   - Verify organization setup at https://platform.openai.com/account/organization
+   - Add billing at https://platform.openai.com/account/billing
+   - Generate new API key at https://platform.openai.com/api-keys
+
+3. **Or use both** for maximum reliability
+
+For detailed solutions, see [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
+
+### Other Common Issues
+
+- **No screenshots captured:** Ensure simulator is running, see manual instructions
+- **Placeholder images:** Check API keys and internet connection
+- **Generic metadata:** OpenAI needed for GPT-4 text generation
+
+Full troubleshooting guide: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
 
 ## 📝 License
 
