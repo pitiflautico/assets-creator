@@ -9,6 +9,7 @@
   "scripts": {
     "build": "tsc",
     "dev": "ts-node src/index.ts",
+    "capture": "ts-node src/capture-only.ts",
     "start": "node dist/index.js",
     "watch": "tsc --watch"
   },
